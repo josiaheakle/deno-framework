@@ -1,4 +1,4 @@
-import { Client } from "https://deno.land/x/mysql/mod.ts";
+import { Client } from "https://deno.land/v2.8.0/mysql/mod.ts";
 
 class Database {
 
