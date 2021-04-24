@@ -1,6 +1,10 @@
 import { assertEquals,assertArrayIncludes } from "https://deno.land/std@0.95.0/testing/asserts.ts";
-import {Model, InputProperty} from "./Model.ts";
+import { Model, InputProperty } from "./Model.ts";
 
+import { config } from "../../test_deps.ts";
+
+
+const ENV = config();
 
 Deno.test(`model_missing_property`, () => {
 
@@ -32,7 +36,7 @@ Deno.test(`model_missing_property`, () => {
         'test2':1
     })
     model.verify();
-    assertArrayIncludes(model.errors['test2'], ['Missing test2.']);
+    assertArrayIncludes(model.getErrors()['test2'], ['Missing test2.']);
 
 });
 
@@ -68,7 +72,7 @@ Deno.test(`model_empty_required_property`, () => {
     })
     model.verify();
 
-    assertArrayIncludes(model.errors['test 2'], ['Required.']);
+    assertArrayIncludes(model.getErrors()['test 2'], ['Required.']);
 
 });
 
@@ -159,8 +163,41 @@ Deno.test(`model_invalid_all_rules_used`, () => {
     });
 
     assertEquals(model.verify(), false);
-    assertArrayIncludes(model.errors['Email'], ['Must be a valid email.']);
-    assertArrayIncludes(model.errors['Password'], ['Must be at least 6 characters.']);
-    assertArrayIncludes(model.errors['Age'], ['Must be at least 13.']);
+    assertArrayIncludes(model.getErrors()['Email'], ['Must be a valid email.']);
+    assertArrayIncludes(model.getErrors()['Password'], ['Must be at least 6 characters.']);
+    assertArrayIncludes(model.getErrors()['Age'], ['Must be at least 13.']);
+
+});
+
+Deno.test(`model_valid_database`, async () => {
+
+    class TestModel extends Model {
+        
+        public num = new InputProperty('Number', 'num');
+
+        public rules() {
+            return {
+                'num' : {
+                    'required':true
+                }
+            }
+        }
+
+        public tableName () {
+            return 'test';
+        }
+
+    }
+
+    const model = new TestModel();
+    model.connectDatabase(ENV.DB_HOST, ENV.DB_USERNAME, ENV.DB_PASSWORD, ENV.DB_NAME);
+    model.loadData({
+        'num': 988
+    });
+    const res = await model.saveToDatabase();
+    model.closeDatabase();
+
+    assertEquals(model.verify(), true);
+    assertEquals(res['affectedRows'], 1);
 
 });

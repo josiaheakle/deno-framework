@@ -12,6 +12,7 @@ An abstract model class with mySQL connection to handle input rules and validati
     DB_PASSWORD=
     DB_NAME=
 ```
+### Model Implementation
 2. Create class extending from model with rules(), tableName(), and valid InputProperties. InputProperty must have the same name as the rule, first param is the display name, second param is optional and is the column name (only use if the property will be saved to the database). 
 ```ts
     import {Model, InputProperty} from "";
@@ -45,7 +46,7 @@ An abstract model class with mySQL connection to handle input rules and validati
         }
     }
 ```
-3. Create instance of class, load data and use verify to check rules.
+3. Create instance of class, load data and use verify to check rules. 
 ```ts
     const fooModel = new FooModel();
     fooModel.loadData({
@@ -53,6 +54,15 @@ An abstract model class with mySQL connection to handle input rules and validati
         "inputBar": "input text",
         "inputEmail":"email@email.com"
     });
+    fooModel.verify() // false as inputFoo does follow the rule
+```
+4. If valid, connect to database and save data. Escapes values of any illegal sql characters.
+```ts
+    if(fooModel.verify()) {
+        await fooModel.connectDatabase(ENV.DB_HOST, ENV.DB_USERNAME, ENV.DB_PASSWORD, ENV.DB_NAME);
+        await fooModel.saveToDatabase();
+        await fooModel.closeDatabase();
+    }
 ```
 ### Validation Methods
  - required (no param)

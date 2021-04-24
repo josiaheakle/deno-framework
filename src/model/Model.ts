@@ -1,5 +1,7 @@
 import ValidationMethods from "./ValidationMethods.ts";
 import InputProperty from "./InputProperty.ts";
+import {Database} from "../database/Database.ts";
+import {escapeSql} from "../../deps.ts";
 
 abstract class Model  {
     [index: string]: any
@@ -9,11 +11,14 @@ abstract class Model  {
      * same names as object keys in loadData.
      * this.load will load data into properties, 
      * this.verify will check rules set in this.rules
-     * to verify input matches specified rules, adds errors to this.errors instance
+     * to verify input matches specified rules, adds errors to this.errors instance.
+     * use this.connectDatabase to create database connect, .closeDatabase to close, and .saveToDatabase 
+     * to save data, just be sure to verify first! 
      */
 
 
-    public errors   : {[index: string]:Array<string>}  = {};
+    private _errors    : {[index: string]:string[]} = {};
+    private _database : Database = new Database();
 
     /**
      * Returns object with input properties as first key, 
@@ -27,6 +32,7 @@ abstract class Model  {
      * Returns string of table name for this datatype
      */
     abstract tableName() : string;
+
 
     /**
      * Loads data into class instance
@@ -46,7 +52,7 @@ abstract class Model  {
      * returns this.hasError
      * @returns {boolean}
      */
-    public verify() : boolean {
+    public verify(sanitize : boolean = true) : boolean {
 
         for (const [property , rule] of Object.entries(this.rules())) {
             for (const [ ruleMethod, param ] of Object.entries(rule) ) {
@@ -61,10 +67,54 @@ abstract class Model  {
     }
 
     /**
+     * Connects model database instance to database following config params
+     * @param {string} databaseHost
+     * @param {string} databaseUsername
+     * @param {string} databasePassword 
+     * @param {string} datbaseName
+     */
+    public async connectDatabase(databaseHost : string, databaseUsername : string, databasePassword : string, databaseName : string) {
+        this._database.setConfig(databaseHost, databaseUsername, databasePassword, databaseName);
+        await this._database.connect();
+    }
+
+    /**
+     * Closes database connection
+     */
+    public async closeDatabase() {
+        await this._database.close();
+    }
+
+    /**
+     * Saves all input properties with column names to database
+     */
+    public async saveToDatabase() {
+
+        const properties = Object.keys(this);
+        let insertData : {[index:string]:any} = {};
+
+        properties.forEach((prop) => {
+            if(prop[0] !== '_' && this[prop].columnName !== '') {
+                insertData[escapeSql(this[prop].columnName)] = escapeSql(this[prop].value);
+            }
+        })
+
+        return await this._database.insert(this.tableName(), insertData);
+    }
+
+    /**
      * @returns {boolean} true if this object has any errors
      */
     public hasError() : boolean {
-        return (Object.keys(this.errors).length > 0);
+        return (Object.keys(this._errors).length > 0);
+    }
+
+    /**
+     * Returns this._errors
+     * @returns {{[index:string]:string}} this._errors
+     */
+    public getErrors() : {[index:string]:string[]} {
+        return this._errors;
     }
 
     /**
@@ -85,8 +135,6 @@ abstract class Model  {
             } else {
                 return ValidationMethods[ruleMethod](property.value, param);
             }
-            // Else call validation method rule with property value as first arg
-            // else return ((ValidationMethods.extraMethods[ruleMethod](property.value, param)));
         } else {
             // If param is null, don't pass it to method
             return ValidationMethods[ruleMethod](property.value) ?? (ValidationMethods.extraMethods[ruleMethod](property.value));
@@ -105,8 +153,8 @@ abstract class Model  {
         }
         else propStr = property.displayName ?? '';
         const errorMessage = ValidationMethods._getErrorMessage(ruleMethod,param);
-        if(this.errors[propStr] === undefined) this.errors[propStr] = [errorMessage];
-        else if (!this.errors[propStr].includes(errorMessage)) this.errors[propStr].push(errorMessage);
+        if(this._errors[propStr] === undefined) this._errors[propStr] = [errorMessage];
+        else if (!this._errors[propStr].includes(errorMessage)) this._errors[propStr].push(errorMessage);
         
     }
 
