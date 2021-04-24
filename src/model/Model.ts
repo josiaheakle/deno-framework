@@ -21,7 +21,7 @@ abstract class Model  {
      * ---
      * @return {object} (ex. {'email': {'isEmail':null}, {firsName: {'max':20}}} );
      */
-    abstract rules() : object;
+    abstract rules() : {[index:string]:{[index:string]:any}};
 
     /**
      * Returns string of table name for this datatype
