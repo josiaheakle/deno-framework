@@ -1,13 +1,13 @@
-{
-    "compilerOptions": {
-      "module": "amd",
-      "target": "esnext",
-      "baseUrl": ".",
-      "paths": {
-        "http://*": ["../../../.deno/deps/http/*"],
-        "https://*": ["../../../.deno/deps/https/*"],
-        "*.ts": ["*"]
-      }
-    }
-  }
+// {
+//     "compilerOptions": {
+//       "module": "amd",
+//       "target": "esnext",
+//       "baseUrl": ".",
+//       "paths": {
+//         "http://*": ["../../../.deno/deps/http/*"],
+//         "https://*": ["../../../.deno/deps/https/*"],
+//         "*.ts": ["*"]
+//       }
+//     }
+//   }
   
