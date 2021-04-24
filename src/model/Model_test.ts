@@ -2,7 +2,7 @@ import { assertEquals,assertArrayIncludes } from "https://deno.land/std@0.95.0/t
 import {Model, InputProperty} from "./Model.ts";
 
 
-Deno.test(`missing property`, () => {
+Deno.test(`model_missing_property`, () => {
 
     class TestModel extends Model {
         public test1 = new InputProperty('test 1', 'test1');
@@ -37,7 +37,7 @@ Deno.test(`missing property`, () => {
 });
 
 
-Deno.test(`empty_required_property`, () => {
+Deno.test(`model_empty_required_property`, () => {
 
     class TestModel extends Model {
         
@@ -73,7 +73,7 @@ Deno.test(`empty_required_property`, () => {
 });
 
 
-Deno.test(`valid_all_rules_used`, () => {
+Deno.test(`model_valid_all_rules_used`, () => {
 
     class TestModel extends Model {
         
@@ -118,7 +118,7 @@ Deno.test(`valid_all_rules_used`, () => {
 });
 
 
-Deno.test(`invalid_all_rules_used`, () => {
+Deno.test(`model_invalid_all_rules_used`, () => {
 
     class TestModel extends Model {
         
@@ -162,53 +162,5 @@ Deno.test(`invalid_all_rules_used`, () => {
     assertArrayIncludes(model.errors['Email'], ['Must be a valid email.']);
     assertArrayIncludes(model.errors['Password'], ['Must be at least 6 characters.']);
     assertArrayIncludes(model.errors['Age'], ['Must be at least 13.']);
-
-});
-
-
-Deno.test(`invalid_all_rules_used`, () => {
-
-    class TestModel extends Model {
-        
-        public email = new InputProperty('Email', 'email');
-        public age = new InputProperty('Age', 'age');
-        public password = new InputProperty('Password', 'password');
-
-        public rules() {
-            return {
-                'email' : {
-                    'required':true,
-                    'isEmail':true,
-                },
-                'age' : {
-                    'required':true,
-                    'minNum':13,
-                    'maxNum':120,
-                },
-                'password' : {
-                    'required':true,
-                    'min':6,
-                    'max':20,
-                }
-            }
-        }
-
-        public tableName () {
-            return 'table';
-        }
-
-    }
-
-    const model = new TestModel();
-    model.loadData({
-        'email':'',
-        'password': '',
-        'age':''
-    });
-
-    assertEquals(model.verify(), false);
-    assertArrayIncludes(model.errors['Email'], ['Required.']);
-    assertArrayIncludes(model.errors['Password'], ['Required.']);
-    assertArrayIncludes(model.errors['Age'], ['Required.']);
 
 });
