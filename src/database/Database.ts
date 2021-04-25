@@ -74,9 +74,8 @@ class Database {
      * @param {Array<string | number | boolean>} params : params to replace ? placeholders on execute
      * @return {Promise<{[index:string]:any}>} sql response
      */
-    async query( SQL : string, params : Array<string | number | boolean> ) : Promise<{[index:string]:any}>  {
-        let res : {[index:string]:any} = await this.connection.query(SQL, params);
-        return res;
+    async query( SQL : string, params : Array<any> ) : Promise<{[index:string]:any}>  {
+        return await this.connection.query(SQL, params);
     }
 
 }

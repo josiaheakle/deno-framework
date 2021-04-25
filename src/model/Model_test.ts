@@ -14,13 +14,12 @@ Deno.test(`model_missing_property`, () => {
 
         public rules() {
             return {
-                'test1' : {
-                    'required':true
-                },
-                'test2' : {
-                    'required':true,
-                    'min': 2
-                }
+                'test1' : ['required'],
+                    
+                'test2' : [
+                    'required',
+                    {'min': 2}
+                ]
             }
         }
 
@@ -30,7 +29,7 @@ Deno.test(`model_missing_property`, () => {
 
     }
 
-    const model = new TestModel();
+    const model = new TestModel(ENV);
     model.loadData({
         'test1':'wee wee',
         'test2':1
@@ -50,12 +49,9 @@ Deno.test(`model_empty_required_property`, () => {
 
         public rules() {
             return {
-                'test1' : {
-                    'required':true
-                },
-                'test2' : {
-                    'required':true,
-                }
+                'test1' : ['required'],
+                    
+                'test2' : ['required']
             }
         }
 
@@ -65,14 +61,14 @@ Deno.test(`model_empty_required_property`, () => {
 
     }
 
-    const model = new TestModel();
+    const model = new TestModel(ENV);
     model.loadData({
         'test1':'wee wee',
         'test2':''
     })
     model.verify();
 
-    assertArrayIncludes(model.getErrors()['test 2'], ['Required.']);
+    assertArrayIncludes(model.getErrors()['test2'], ['Required.']);
 
 });
 
@@ -87,20 +83,20 @@ Deno.test(`model_valid_all_rules_used`, () => {
 
         public rules() {
             return {
-                'email' : {
-                    'required':true,
-                    'isEmail':true,
-                },
-                'age' : {
-                    'required':true,
-                    'min':13,
-                    'max':120,
-                },
-                'password' : {
-                    'required':true,
-                    'min':6,
-                    'max':20,
-                }
+                'email' : [
+                    'required',
+                    'isEmail'
+                ],
+                'age' : [
+                    'required',
+                    {'minNum':13},
+                    {'maxNum':120},
+                ],
+                'password' : [
+                    'required',
+                    {'min':6},
+                    {'max':20}
+                ]
             }
         }
 
@@ -110,7 +106,7 @@ Deno.test(`model_valid_all_rules_used`, () => {
 
     }
 
-    const model = new TestModel();
+    const model = new TestModel(ENV);
     model.loadData({
         'email':'email@email.com',
         'password': 'password',
@@ -132,20 +128,20 @@ Deno.test(`model_invalid_all_rules_used`, () => {
 
         public rules() {
             return {
-                'email' : {
-                    'required':true,
-                    'isEmail':true,
-                },
-                'age' : {
-                    'required':true,
-                    'minNum':13,
-                    'maxNum':120,
-                },
-                'password' : {
-                    'required':true,
-                    'min':6,
-                    'max':20,
-                }
+                'email' : [
+                    'required',
+                    'isEmail',
+                ],
+                'age' : [
+                    'required',
+                    {'minNum':13},
+                    {'maxNum':120}
+                ],
+                'password' : [
+                    'required',
+                    {'min':6},
+                    {'max':20}
+                ]
             }
         }
 
@@ -155,7 +151,7 @@ Deno.test(`model_invalid_all_rules_used`, () => {
 
     }
 
-    const model = new TestModel();
+    const model = new TestModel(ENV);
     model.loadData({
         'email':'email//email.com',
         'password': 'pad',
@@ -163,9 +159,9 @@ Deno.test(`model_invalid_all_rules_used`, () => {
     });
 
     assertEquals(model.verify(), false);
-    assertArrayIncludes(model.getErrors()['Email'], ['Must be a valid email.']);
-    assertArrayIncludes(model.getErrors()['Password'], ['Must be at least 6 characters.']);
-    assertArrayIncludes(model.getErrors()['Age'], ['Must be at least 13.']);
+    assertArrayIncludes(model.getErrors()['email'], ['Must be a valid email.']);
+    assertArrayIncludes(model.getErrors()['password'], ['Must be at least 6 characters.']);
+    assertArrayIncludes(model.getErrors()['age'], ['Must be at least 13.']);
 
 });
 
@@ -177,9 +173,9 @@ Deno.test(`model_valid_database`, async () => {
 
         public rules() {
             return {
-                'num' : {
-                    'required':true
-                }
+                'num' : [
+                    'required'
+                ]
             }
         }
 
@@ -189,7 +185,7 @@ Deno.test(`model_valid_database`, async () => {
 
     }
 
-    const model = new TestModel();
+    const model = new TestModel(ENV);
     model.connectDatabase(ENV.DB_HOST, ENV.DB_USERNAME, ENV.DB_PASSWORD, ENV.DB_NAME);
     model.loadData({
         'num': 988

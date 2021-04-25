@@ -17,8 +17,13 @@ abstract class Model  {
      */
 
 
-    private _errors    : {[index: string]:string[]} = {};
-    private _database : Database = new Database();
+    private _errors     : {[index: string]:Array<string>} = {};
+    public _database    : Database = new Database(); // public for testing purposes
+    public _env        : {[index:string]:string};
+
+    constructor(config : {[index:string]:string}) {
+        this._env = config;
+    }
 
     /**
      * Returns object with input properties as first key, 
@@ -26,7 +31,7 @@ abstract class Model  {
      * ---
      * @return {object} (ex. {'email': {'isEmail':null}, {firsName: {'max':20}}} );
      */
-    abstract rules() : {[index:string]:{[index:string]:any}};
+    abstract rules() : {[index:string]:any[]} ;
 
     /**
      * Returns string of table name for this datatype
@@ -53,17 +58,27 @@ abstract class Model  {
      * @returns {boolean}
      */
     public verify(sanitize : boolean = true) : boolean {
+        for (const [property , rules] of Object.entries(this.rules())) {
+            if (!this.hasOwnProperty(property)) { 
+                this._addError(property, 'missing', property);
+            } else {
+                rules.forEach((rule) => {
+                    let ruleMethod : string = '';
+                    let param      : any;
+                    if(typeof(rule) !== 'string') {
+                        ruleMethod = Object.keys(rule)[0];
+                        param = rule[ruleMethod];    
+                    } else {
+                        ruleMethod = rule;
+                        param = null;
+                    }
 
-        for (const [property , rule] of Object.entries(this.rules())) {
-            for (const [ ruleMethod, param ] of Object.entries(rule) ) {
-                if (!this.hasOwnProperty(property)) { 
-                    this._addError(property, 'missing', property);
-                } else if(!this._checkValidationMethod(this[property], ruleMethod, param)) {
-                    this._addError(this[property], ruleMethod, param);
-                }
+                    if(!this._checkValidationMethod(this[property], ruleMethod, param)) {
+                        this._addError(property, ruleMethod, param);
+                    }
+                });
             }
-        }
-        return !this.hasError();
+        } return !this.hasError();
     }
 
     /**
@@ -88,13 +103,13 @@ abstract class Model  {
     /**
      * Saves all input properties with column names to database
      */
-    public async saveToDatabase() {
+    public async saveToDatabase() : Promise<{[index:string]:any}> {
 
         const properties = Object.keys(this);
         let insertData : {[index:string]:any} = {};
 
         properties.forEach((prop) => {
-            if(prop[0] !== '_' && this[prop].columnName !== '') {
+            if(prop[0] !== '_' && this[prop].columnName !== '' && this[prop] instanceof InputProperty) {
                 insertData[escapeSql(this[prop].columnName)] = escapeSql(this[prop].value);
             }
         })
@@ -124,20 +139,18 @@ abstract class Model  {
      * @param param Param string | number | null
      * @returns True if validation is successful
      */
-    private _checkValidationMethod(property : InputProperty, ruleMethod : string, param : any) : boolean {
-        if (property === undefined) return false;
+    private _checkValidationMethod(property : InputProperty, ruleMethod : string, param? : any) : boolean {
+        if (!property) return false;
         if(param !== null) {
-            
             // If method is match, get value of match property
-            let ret : any = undefined;
             if(ruleMethod === 'match') {
-                return ValidationMethods.match(property.value, this[param].value);
+                return ValidationMethods['match'](property.value, this[param].value);
             } else {
                 return ValidationMethods[ruleMethod](property.value, param);
             }
         } else {
             // If param is null, don't pass it to method
-            return ValidationMethods[ruleMethod](property.value) ?? (ValidationMethods.extraMethods[ruleMethod](property.value));
+            return ValidationMethods[ruleMethod](property.value);
         }
     }
 
@@ -146,16 +159,10 @@ abstract class Model  {
      * @param property Property name
      * @param ruleMethod Method which returned false
      */
-    private _addError(property : InputProperty|string, ruleMethod : string, param : any) : void {
-        let propStr : string = '';
-        if(typeof(property) === 'string') { 
-            propStr = property;
-        }
-        else propStr = property.displayName ?? '';
-        const errorMessage = ValidationMethods._getErrorMessage(ruleMethod,param);
-        if(this._errors[propStr] === undefined) this._errors[propStr] = [errorMessage];
-        else if (!this._errors[propStr].includes(errorMessage)) this._errors[propStr].push(errorMessage);
-        
+    private _addError(property : string, ruleMethod : string, param : any) : void {
+        const errorMessage =  (ruleMethod === 'match' ? ValidationMethods._getErrorMessage(ruleMethod,this[param].displayName) : ValidationMethods._getErrorMessage(ruleMethod,param));
+        if(this._errors[property] === undefined) this._errors[property] = [errorMessage];
+        else if (!this._errors[property].includes(errorMessage)) this._errors[property].push(errorMessage);
     }
 
 }
