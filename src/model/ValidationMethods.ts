@@ -80,9 +80,9 @@ const ValidationMethods : {[index: string]: any} = (() => {
      * @returns true if input is not empty
      */
     function required(testValue : any) : boolean {
+        if (!testValue) return false;
         if(typeof(testValue) === 'string') {
-            if(testValue.length === 0) return false;
-            return true;
+            return (testValue.length > 0);
         } else if (typeof(testValue === 'number')) {
             return true;
         } else return false;

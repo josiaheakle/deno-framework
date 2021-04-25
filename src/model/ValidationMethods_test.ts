@@ -91,3 +91,28 @@ Deno.test(`minNum_invalid_02`, () => {
     const res = ValidationMethods.minNum(5, 6);
     assertEquals(res, false);
 });
+
+Deno.test(`required invalid 01`, () => {
+    const res = ValidationMethods.required('');
+    assertEquals(res, false);
+});
+
+Deno.test(`required invalid 02`, () => {
+    const res = ValidationMethods.required(undefined);
+    assertEquals(res, false);
+});
+
+Deno.test(`required invalid 03`, () => {
+    const res = ValidationMethods.required(null);
+    assertEquals(res, false);
+});
+
+Deno.test(`required valid 01`, () => {
+    const res = ValidationMethods.required("e");
+    assertEquals(res, true);
+});
+
+Deno.test(`required valid 02`, () => {
+    const res = ValidationMethods.required(1);
+    assertEquals(res, true);
+});
