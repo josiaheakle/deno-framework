@@ -1,5 +1,5 @@
 
-# Model 
+# JE Model
 Author : [Josiah Eakle](https://josiaheakle.com)
 
 An abstract model class with mySQL connection to handle input rules and validation.
@@ -12,16 +12,20 @@ An abstract model class with mySQL connection to handle input rules and validati
     DB_PASSWORD=
     DB_NAME=
 ```
+2. Create new class extending Model. Implementing the following methods:
+    - rules() : return {inputName : [rules, {ruleWithParam:param}]}
+    - tableName() : return name of table model data is associated with
+
 ### Model Implementation
-2. Create class extending from model with rules(), tableName(), and valid InputProperties. InputProperty must have the same name as the rule, first param is the display name, second param is optional and is the column name (only use if the property will be saved to the database). 
 ```ts
     import { Model, InputProperty } from "https://deno.land/x/je_model@v0.2.0/mod.ts";
 
     class ExampleModel extends Model {
 
-        // public InputProperty for each input field
-        // InputProperty(displayName : string, columnName? : string)
-        //      only add columnName if property will be saved to database
+        /* public InputProperty for each input field
+         * InputProperty(displayName : string, columnName? : string)
+         * only add columnName if property will be saved to database
+         */
         public inputEmail           = new InputProperty('Email', 'email');
         public inputPassword        = new InputProperty('Password', 'password');
         public inputPasswordConfirm = new InputProperty('Repeat Password');
@@ -80,7 +84,7 @@ An abstract model class with mySQL connection to handle input rules and validati
     }
 
 ```
-3. Create instance of class, load data and use verify to check rules. 
+3. Create instance of class, load data and use verify to check rules. Be sure to pass env variables to constructor.
 ```ts
     const modelInstance = new ExampleModel(ENV);
     const result = await modelInstance.handleLogin({
@@ -91,13 +95,16 @@ An abstract model class with mySQL connection to handle input rules and validati
 ```
 
 ### Validation Methods
- - required (no param)
- - isEmail  (no param)
- - max      (max string length)
- - maxNum   (max amount)
- - min      (min string length)
- - minNum   (min amoun)
- - match    (property name to match)
+
+| Method Name | paramaters | Description|
+| -----------|-------------|------------|
+| required | none | Tests for emptiness. |
+| isEmail  | none | Tests for valid email. |
+| max     | max string length| Tests if string is less than or equal to max |
+| maxNum   | max amount | Tests if number is less than or equal to max |
+| min     | min string length| Tests if string is greater than or equal to min |
+| minNum   | min amount | Tests if number is greater than or equal to min |
+| match   | property name to match | Tests if value is equal to property with param name |
 
 ```ts
     public rules() : {[index:string]:any[]} {
